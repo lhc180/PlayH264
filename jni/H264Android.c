@@ -56,7 +56,7 @@ void CreateYUVTab_16()
 	int i;
 	int u, v;
 	
-//	tmp_pic = (short*)av_malloc(iWidth*iHeight*2); // »º´æ iWidth * iHeight * 16bits
+//	tmp_pic = (short*)av_malloc(iWidth*iHeight*2); // ï¿½ï¿½ï¿½ï¿½ iWidth * iHeight * 16bits
 
 	colortab = (int *)av_malloc(4*256*sizeof(int));
 	u_b_tab = &colortab[0*256];
@@ -134,7 +134,7 @@ void DisplayYUV_16(unsigned int *pdst1, unsigned char *y, unsigned char *u, unsi
 	if(height2>iHeight)
 		height2=iHeight;
 
-	for(j=0; j<height2; j++) // Ò»´Î2x2¹²ËÄ¸öÏñËØ
+	for(j=0; j<height2; j++) // Ò»ï¿½ï¿½2x2ï¿½ï¿½ï¿½Ä¸ï¿½ï¿½ï¿½ï¿½ï¿½
 	{
 		yoff = y + j * 2 * src_ystride;
 		uoff = u + j * src_uvstride;
@@ -185,7 +185,7 @@ void DisplayYUV_16(unsigned int *pdst1, unsigned char *y, unsigned char *u, unsi
  * Method:    InitDecoder
  * Signature: ()I
  */
-jint Java_h264_com_VView_InitDecoder(JNIEnv* env, jobject thiz, jint width, jint height)
+jint Java_com_android_playh264_jni_Decoder_InitDecoder(JNIEnv* env, jobject thiz, jint width, jint height)
 {
 	iWidth = width;
 	iHeight = height;
@@ -206,7 +206,7 @@ jint Java_h264_com_VView_InitDecoder(JNIEnv* env, jobject thiz, jint width, jint
  * Method:    UninitDecoder
  * Signature: ()I
  */
-jint Java_h264_com_VView_UninitDecoder(JNIEnv* env, jobject thiz)
+jint Java_com_android_playh264_jni_Decoder_UninitDecoder(JNIEnv* env, jobject thiz)
 {
 	if(c)
 	{
@@ -233,7 +233,7 @@ jint Java_h264_com_VView_UninitDecoder(JNIEnv* env, jobject thiz)
  * Method:    DecoderNal
  * Signature: ([B[I)I
  */
-jint Java_h264_com_VView_DecoderNal(JNIEnv* env, jobject thiz, jbyteArray in, jint nalLen, jbyteArray out)
+jint Java_com_android_playh264_jni_Decoder_DecoderNal(JNIEnv* env, jobject thiz, jbyteArray in, jint nalLen, jbyteArray out)
 {
 	int i;
 	int imod;
