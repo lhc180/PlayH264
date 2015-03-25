@@ -40,8 +40,8 @@ public class H264Android extends Activity {
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         
-        menu.add(0, PLAY_ID, 0, R.string.play);   
-        menu.add(0, EXIT_ID, 1, R.string.exit);
+//        menu.add(0, PLAY_ID, 0, R.string.play);   
+//        menu.add(0, EXIT_ID, 1, R.string.exit);
 
         return true;
     }
