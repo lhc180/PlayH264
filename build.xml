@@ -232,9 +232,9 @@
 			<arg value="-keystore" />
 			<arg value="${keystore-file}" />
 			<arg value="-storepass" />
-			<arg value="123456" />
+			<arg value="${pass}" />
 			<arg value="-keypass" />
-			<arg value="123456" />
+			<arg value="${pass}" />
 			<arg value="-signedjar" />
 			<arg value="${out-signed-package-ospath}" />
 			<arg value="${out-unsigned-package-ospath}" />

@@ -17,7 +17,7 @@ public class SplashSpotActivity extends BaseActivity {
 
 		SpotManager.getInstance(this).loadSplashSpotAds();
 		SpotManager.getInstance(this).showSplashSpotAds(this,
-				CameraActivity.class);
+				ScreenActivity.class);
 
 		String ret = getIntent().getStringExtra("test");
 		if (ret != null)
@@ -31,7 +31,7 @@ public class SplashSpotActivity extends BaseActivity {
 
 		if (resultCode == 10045) {
 			Intent intent = new Intent(SplashSpotActivity.this,
-					CameraActivity.class);
+					ScreenActivity.class);
 			startActivity(intent);
 			finish();
 		}
