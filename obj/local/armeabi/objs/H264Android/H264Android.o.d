@@ -25,7 +25,8 @@
  /Users/chenjiulong/Downloads/android-ndk-r8e/platforms/android-14/arch-arm/usr/include/memory.h \
  /Users/chenjiulong/workspace/PlayH264/jni/common.h \
  /Users/chenjiulong/Downloads/android-ndk-r8e/platforms/android-14/arch-arm/usr/include/ctype.h \
- /Users/chenjiulong/workspace/PlayH264/jni/avcodec.h
+ /Users/chenjiulong/workspace/PlayH264/jni/avcodec.h \
+ /Users/chenjiulong/Downloads/android-ndk-r8e/platforms/android-14/arch-arm/usr/include/android/log.h
 
 /Users/chenjiulong/Downloads/android-ndk-r8e/platforms/android-14/arch-arm/usr/include/string.h:
 
@@ -78,3 +79,5 @@
 /Users/chenjiulong/Downloads/android-ndk-r8e/platforms/android-14/arch-arm/usr/include/ctype.h:
 
 /Users/chenjiulong/workspace/PlayH264/jni/avcodec.h:
+
+/Users/chenjiulong/Downloads/android-ndk-r8e/platforms/android-14/arch-arm/usr/include/android/log.h:

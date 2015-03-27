@@ -1,5 +1,10 @@
 package com.android.playh264;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 import net.youmi.android.banner.AdSize;
@@ -9,6 +14,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
+import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,58 +26,31 @@ import android.view.Display;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
-import android.view.View;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
-import android.widget.Toast;
 
-import com.android.playh264.jni.Decoder;
+import com.android.ffmpeglib.H264Decoder;
 
 public class ScreenActivity extends BaseActivity implements Callback {
 	private final static String TAG = "ScreenActivity";
 	private SurfaceView mSurfaceView;
-	WakeLock wl;
+	private WakeLock wl;
 	boolean isPause = false;
 	// 传输数据
-	private Decoder mH264Android = null;
-
-	private int mFrameWidth = 0;
-	private int mFrameHeight = 0;
+	private H264Decoder mH264Android = null;
 
 	private byte[] mPixel = null;
 	private ByteBuffer mBuffer = null;
 	private Bitmap mVideoBit = null;
 
 	private SurfaceHolder mSurfaceHolder = null;
-
-	private RelativeLayout mProgressLayout;
-	private TextView mIpInput;
-
 	private LinearLayout mLinearLayoutAd;
 
 	private int mScreenW = 0;
 	private int mScreenH = 0;
-	private int mSurfaceW = 0;
-	private int mSurfaceH = 0;
+	private int mSurfaceW = 320;
+	private int mSurfaceH = 240;
 
-	private final static int SHOW_PROCESS = 100;
-	private final static int DISMISS_ROCESS = 101;
-	private Handler mHandler = new Handler() {
-		public void handleMessage(android.os.Message msg) {
-			switch (msg.what) {
-			case SHOW_PROCESS:
-				if (mProgressLayout != null) {
-					mProgressLayout.setVisibility(View.VISIBLE);
-				}
-				break;
-			case DISMISS_ROCESS:
-				if (mProgressLayout != null)
-					mProgressLayout.setVisibility(View.GONE);
-				break;
-			}
-		};
-	};
+	private PlayThread mPlayThread;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -82,11 +61,6 @@ public class ScreenActivity extends BaseActivity implements Callback {
 
 	@Override
 	protected void onDestroy() {
-
-		if (mH264Android != null) {
-			mH264Android.UninitDecoder();
-			mH264Android = null;
-		}
 		super.onDestroy();
 	}
 
@@ -110,9 +84,7 @@ public class ScreenActivity extends BaseActivity implements Callback {
 	private void initView() {
 		mSurfaceView = (SurfaceView) findViewById(R.id.surfaceview);
 		mSurfaceView.getHolder().addCallback(this);
-		mProgressLayout = (RelativeLayout) findViewById(R.id.progressbar_process_layout);
-		mIpInput = (TextView) findViewById(R.id.input_ip);
-
+		mSurfaceView.setZOrderOnTop(true);
 		Display display = getWindowManager().getDefaultDisplay();
 		mScreenW = display.getWidth();
 		mScreenH = display.getHeight();
@@ -120,6 +92,7 @@ public class ScreenActivity extends BaseActivity implements Callback {
 		mLinearLayoutAd = (LinearLayout) findViewById(R.id.ad_linearlayout);
 
 		AdView adView = new AdView(this, AdSize.FIT_SCREEN);
+
 		mLinearLayoutAd.addView(adView);
 		adView.setAdListener(new AdViewListener() {
 
@@ -151,127 +124,197 @@ public class ScreenActivity extends BaseActivity implements Callback {
 	public void surfaceCreated(SurfaceHolder arg0) {
 		Log.e(TAG, "surfaceCreated");
 		mSurfaceHolder = arg0;
+		mSurfaceHolder.setFormat(PixelFormat.TRANSPARENT);
+		if (mPlayThread == null) {
+			mPlayThread = new PlayThread();
+			mPlayThread.start();
+		}
 	}
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder arg0) {
 		Log.e(TAG, "surfaceCreated");
-
 		mSurfaceHolder = null;
 	}
 
-	/*if(isPause)
-		return;
-	if (data.length == 35 && data[0] == 35 && data[34] == 35) {
-		Log.e(TAG, "data bybe");
-		mHandler.sendEmptyMessage(SHOW_PROCESS);
+	private class PlayThread extends Thread {
 
-		// ScreenActivity.this.finish();
-		return;
+		int mTrans = 0x0F0F0F0F;
+
+		@Override
+		public void run() {
+			File file = new File("mnt/sdcard/outputfile.h264");
+			InputStream fileIS = null;
+
+			boolean iTemp = false;
+			int nalLen;
+
+			boolean bFirst = true;
+			boolean bFindPPS = true;
+
+			int bytesRead = 0;
+			int NalBufUsed = 0;
+			int SockBufUsed = 0;
+
+			byte[] NalBuf = new byte[409800]; // 40k
+			byte[] SockBuf = new byte[2048];
+
+			try {
+				fileIS = new FileInputStream(file);
+			} catch (FileNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			mH264Android = new H264Decoder();
+			mH264Android.init();
+
+			while (!Thread.currentThread().isInterrupted()) {
+				try {
+					bytesRead = fileIS.read(SockBuf, 0, 2048);
+				} catch (IOException e) {
+				}
+
+				if (bytesRead <= 0)
+					break;
+
+				SockBufUsed = 0;
+
+				while (bytesRead - SockBufUsed > 0) {
+					nalLen = MergeBuffer(NalBuf, NalBufUsed, SockBuf,
+							SockBufUsed, bytesRead - SockBufUsed);
+
+					NalBufUsed += nalLen;
+					SockBufUsed += nalLen;
+
+					while (mTrans == 1) {
+						mTrans = 0xFFFFFFFF;
+
+						if (bFirst == true) // the first start flag
+						{
+							bFirst = false;
+						} else // a complete NAL data, include 0x00000001 trail.
+						{
+							if (bFindPPS == true) // true
+							{
+								if ((NalBuf[4] & 0x1F) == 7) {
+									bFindPPS = false;
+								} else {
+									NalBuf[0] = 0;
+									NalBuf[1] = 0;
+									NalBuf[2] = 0;
+									NalBuf[3] = 1;
+
+									NalBufUsed = 4;
+
+									break;
+								}
+							}
+							// decode nal
+							byte[] buffer = new byte[NalBufUsed - 4];
+							System.arraycopy(NalBuf, 0, buffer, 0,
+									buffer.length);
+							iTemp = mH264Android.decode(buffer, mPixel);
+
+							if (iTemp && mBuffer != null) {
+								mBuffer.mark();
+								mVideoBit.copyPixelsFromBuffer(mBuffer);
+								mBuffer.reset();
+								if (mSurfaceHolder != null) {
+									Canvas can = mSurfaceHolder.lockCanvas();
+									if (can != null) {
+										can.save();
+										can.drawBitmap(mVideoBit, null,
+												new Rect(0, 0, mSurfaceH,
+														mSurfaceW), null);
+										can.restore();
+									}
+									mSurfaceHolder.unlockCanvasAndPost(can);
+								}
+							} else {
+								int h = mH264Android.geth();
+								int w = mH264Android.getw();
+								if (h > 0 && w > 0) {
+									mPixel = new byte[w * h * 2];
+									if (mBuffer != null) {
+										mBuffer.clear();
+										mBuffer = null;
+									}
+									mBuffer = ByteBuffer.wrap(mPixel);
+									if (mVideoBit != null
+											&& !mVideoBit.isRecycled()) {
+										mVideoBit.recycle();
+										mVideoBit = null;
+									}
+									mVideoBit = Bitmap.createBitmap(w, h,
+											Config.RGB_565);
+
+									mSurfaceW = mScreenW;
+									mSurfaceH = (int) (mScreenW * (1.0f * w / h));
+									if (mSurfaceH > mScreenH) {
+										mSurfaceW = (int) (mScreenH * (1.0f * h / w));
+										mSurfaceH = mScreenH;
+									}
+									new Handler(Looper.getMainLooper())
+											.post(new Runnable() {
+
+												@Override
+												public void run() {
+
+													mSurfaceHolder
+															.setFixedSize(
+																	mSurfaceW,
+																	mSurfaceH);
+												}
+											});
+								}
+							}
+						}
+
+						NalBuf[0] = 0;
+						NalBuf[1] = 0;
+						NalBuf[2] = 0;
+						NalBuf[3] = 1;
+
+						NalBufUsed = 4;
+
+						try {
+							Thread.sleep(20);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+			try {
+				if (fileIS != null)
+					fileIS.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			mH264Android.release();
+		}
+
+		int MergeBuffer(byte[] NalBuf, int NalBufUsed, byte[] SockBuf,
+				int SockBufUsed, int SockRemain) {
+			int i = 0;
+			byte Temp;
+
+			for (i = 0; i < SockRemain; i++) {
+				Temp = SockBuf[i + SockBufUsed];
+				NalBuf[i + NalBufUsed] = Temp;
+
+				mTrans <<= 8;
+				mTrans |= Temp;
+
+				if (mTrans == 1) {
+					i++;
+					break;
+				}
+			}
+
+			return i;
+		}
+
 	}
-
-	if (data.length == 30 && data[29] == 1 && data[28] == 0
-			&& data[27] == 1 && data[26] == 0 && data[25] == 1
-			&& data[24] == 0) {
-		int w = (data[0] & 0xff) | ((data[1] & 0xff) << 8)
-				| ((data[2] & 0xff) << 16)
-				| ((data[3] & 0xff) << 24);
-		int h = (data[4] & 0xff) | ((data[5] & 0xff) << 8)
-				| ((data[6] & 0xff) << 16)
-				| ((data[7] & 0xff) << 24);
-		Log.e("dragon",
-				String.format("dataCallback w:%d h:%d", w, h));
-
-		mFrameWidth = w;
-		mFrameHeight = h;
-
-		if (mH264Android != null) {
-			mH264Android.UninitDecoder();
-			mH264Android = null;
-		}
-
-		mH264Android = new VView();
-		mH264Android.InitDecoder(w, h);
-
-		mPixel = new byte[mFrameWidth * mFrameHeight * 3];
-		if (mBuffer != null) {
-			mBuffer.clear();
-			mBuffer = null;
-		}
-		mBuffer = ByteBuffer.wrap(mPixel);
-		if (mVideoBit != null && !mVideoBit.isRecycled()) {
-			mVideoBit.recycle();
-			mVideoBit = null;
-		}
-		mVideoBit = Bitmap.createBitmap(w, h, Config.RGB_565);
-		mHandler.sendEmptyMessage(DISMISS_ROCESS);
-
-		mSurfaceW = mScreenW;
-		mSurfaceH = (int) (mScreenW * (1.0f * mFrameHeight / mFrameWidth));
-		if (mSurfaceH > mScreenH) {
-			mSurfaceW = (int) (mScreenH * (1.0f * mFrameWidth / mFrameHeight));
-			mSurfaceH = mScreenH;
-		}
-		new Handler(Looper.getMainLooper()).post(new Runnable() {
-
-			@Override
-			public void run() {
-
-				mSurfaceHolder.setFixedSize(mSurfaceW, mSurfaceH);
-			}
-		});
-	} else {
-		if (Utils.DEBUG) {
-			Log.e("dragon", "dataCallback data:" + data.length);
-			Log.e("dragon", "dataCallback data[0]:" + data[0]);
-			Log.e("dragon", "dataCallback data[1]:" + data[1]);
-			Log.e("dragon", "dataCallback data[2]:" + data[2]);
-			Log.e("dragon", "dataCallback data[3]:" + data[3]);
-		}
-		if (mH264Android == null) {
-			Log.v("dragon", "dataCallback mH264Android == null");
-			return;
-		}
-
-		if (mSurfaceHolder != null) {
-			SurfaceHolder sh = mSurfaceHolder;
-
-			long time = System.currentTimeMillis();
-			// decode nal
-			int ret = mH264Android.DecoderNal(data, data.length,
-					mPixel);
-			if (Utils.DEBUG) {
-				Log.e("dragon",
-						"frame show decode"
-								+ (System.currentTimeMillis() - time));
-			}
-			time = System.currentTimeMillis();
-			if (ret >= 0) {
-				mBuffer.mark();
-				mVideoBit.copyPixelsFromBuffer(mBuffer);
-				mBuffer.reset();
-				if (Utils.DEBUG) {
-					Log.e("dragon", "frame show copy buffer "
-							+ (System.currentTimeMillis() - time));
-				}
-				time = System.currentTimeMillis();
-
-				Canvas can = sh.lockCanvas();
-				if (can != null) {
-					can.save();
-					can.drawBitmap(mVideoBit, null, new Rect(0, 0,
-							mSurfaceW, mSurfaceH), null);
-					can.restore();
-				}
-				sh.unlockCanvasAndPost(can);
-				if (Utils.DEBUG) {
-					Log.e("dragon",
-							"frame show draw "
-									+ (System.currentTimeMillis() - time));
-				}
-				time = System.currentTimeMillis();
-			}
-		}
-	}
-*/
 }

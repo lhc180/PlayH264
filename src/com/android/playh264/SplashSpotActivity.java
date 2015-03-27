@@ -18,6 +18,8 @@ public class SplashSpotActivity extends BaseActivity {
 		SpotManager.getInstance(this).loadSplashSpotAds();
 		SpotManager.getInstance(this).showSplashSpotAds(this,
 				ScreenActivity.class);
+//		SpotManager.getInstance(this).showSplashSpotAds(this,
+//				H264Android.class);
 
 		String ret = getIntent().getStringExtra("test");
 		if (ret != null)
@@ -30,6 +32,8 @@ public class SplashSpotActivity extends BaseActivity {
 		super.onActivityResult(requestCode, resultCode, data);
 
 		if (resultCode == 10045) {
+//			Intent intent = new Intent(SplashSpotActivity.this,
+//					H264Android.class);
 			Intent intent = new Intent(SplashSpotActivity.this,
 					ScreenActivity.class);
 			startActivity(intent);
