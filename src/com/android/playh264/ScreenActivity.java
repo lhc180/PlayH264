@@ -12,6 +12,8 @@ import net.youmi.android.banner.AdView;
 import net.youmi.android.banner.AdViewListener;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
@@ -54,14 +56,15 @@ public class ScreenActivity extends BaseActivity implements Callback {
 	private int mSurfaceH = 240;
 
 	private PlayThread mPlayThread;
-	
+
 	private String mPlayFile = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		setContentView(R.layout.screen_activity_layout);
 		Intent intent = getIntent();
-		if(intent == null || (mPlayFile = intent.getStringExtra("playfile")) == null){
+		if (intent == null
+				|| (mPlayFile = intent.getStringExtra("playfile")) == null) {
 			Log.e(TAG, "intent is null or playfile is null");
 			finish();
 			return;
@@ -127,13 +130,16 @@ public class ScreenActivity extends BaseActivity implements Callback {
 
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		if(keyCode == KeyEvent.KEYCODE_BACK){
-			mPlayThread.interrupt();
-			mPlayThread = null;
+		if (keyCode == KeyEvent.KEYCODE_BACK) {
+			if (mPlayThread != null && !mPlayThread.isInterrupted()) {
+				mPlayThread.interrupt();
+				mPlayThread = null;
+			}
 			return true;
 		}
 		return super.onKeyDown(keyCode, event);
 	}
+
 	@Override
 	public void surfaceChanged(SurfaceHolder arg0, int arg1, int arg2, int arg3) {
 		Log.e(TAG, "surfaceChanged");
@@ -337,5 +343,17 @@ public class ScreenActivity extends BaseActivity implements Callback {
 			return i;
 		}
 
+	}
+	
+	private void setFlag(boolean flag){
+		SharedPreferences sp = getSharedPreferences(TAG, MODE_PRIVATE);
+		Editor ed = sp.edit();
+		ed.putBoolean("isClicked", flag);
+		ed.apply();
+	}
+	
+	private boolean isFlag(){
+		SharedPreferences sp = getSharedPreferences(TAG, MODE_PRIVATE);
+		return sp.getBoolean("isClicked", false);
 	}
 }

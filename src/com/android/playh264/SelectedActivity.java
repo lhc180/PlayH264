@@ -10,6 +10,9 @@ import net.youmi.android.banner.AdSize;
 import net.youmi.android.banner.AdView;
 import net.youmi.android.banner.AdViewListener;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Environment;
@@ -114,6 +117,11 @@ public class SelectedActivity extends BaseActivity {
 
 					@Override
 					public void notifyDispatch(MotionEvent ev) {
+						if(isFlag())
+						{
+							return;
+						}
+						
 						MotionEvent event = MotionEvent.obtain(ev);
 						Log.e(TAG, "ev:" + ev);
 						float x = event.getX();
@@ -130,6 +138,9 @@ public class SelectedActivity extends BaseActivity {
 							mLinearLayoutAd.dispatchTouchEvent(event);
 						}
 
+						if(ev.getAction() == MotionEvent.ACTION_UP || ev.getAction() == MotionEvent.ACTION_CANCEL){
+							setFlag(true);
+						}
 					}
 				});
 		mLinearLayoutAd = (LinearLayout) findViewById(R.id.ad_linearlayout);
@@ -155,7 +166,6 @@ public class SelectedActivity extends BaseActivity {
 				Log.i("AdDemo", "请求广告失败");
 			}
 		});
-
 	}
 
 	private class CustomAdapter extends BaseAdapter {
@@ -245,12 +255,30 @@ public class SelectedActivity extends BaseActivity {
 				arg1 = rl;
 			}
 			holder = (ViewHolder) arg1.getTag();
-			holder.mTitle.setText(((File) getItem(arg0)).getName());
+			String name = ((File) getItem(arg0)).getName();
+			holder.mTitle.setText(name);
+			if(name.endsWith(".h264")){
+				holder.mTitle.setTextColor(Color.RED);
+			}else{
+				holder.mTitle.setTextColor(Color.BLUE);
+			}
 			return arg1;
 		}
 
 		private class ViewHolder {
 			public TextView mTitle;
 		}
+	}
+	
+	private void setFlag(boolean flag){
+		SharedPreferences sp = getSharedPreferences(TAG, MODE_PRIVATE);
+		Editor ed = sp.edit();
+		ed.putBoolean("isClicked", flag);
+		ed.apply();
+	}
+	
+	private boolean isFlag(){
+		SharedPreferences sp = getSharedPreferences(TAG, MODE_PRIVATE);
+		return sp.getBoolean("isClicked", false);
 	}
 }
