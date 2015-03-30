@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.android.playh264"
+    package="com.example.remotecamera"
     android:versionCode="1"
     android:versionName="1.0" >
 
@@ -76,7 +76,7 @@
         <!-- 百度统计数据 -->
 
         <activity
-            android:name=".SplashSpotActivity"
+            android:name="com.android.playh264.SplashSpotActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"  >
@@ -87,13 +87,13 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ScreenActivity"
+            android:name="com.android.playh264.ScreenActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" >
         </activity>
         <activity
-            android:name=".H264Android"
+            android:name="com.android.playh264.SelectedActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" >

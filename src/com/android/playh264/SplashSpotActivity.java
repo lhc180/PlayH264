@@ -17,7 +17,7 @@ public class SplashSpotActivity extends BaseActivity {
 
 		SpotManager.getInstance(this).loadSplashSpotAds();
 		SpotManager.getInstance(this).showSplashSpotAds(this,
-				ScreenActivity.class);
+				SelectedActivity.class);
 //		SpotManager.getInstance(this).showSplashSpotAds(this,
 //				H264Android.class);
 
@@ -35,7 +35,7 @@ public class SplashSpotActivity extends BaseActivity {
 //			Intent intent = new Intent(SplashSpotActivity.this,
 //					H264Android.class);
 			Intent intent = new Intent(SplashSpotActivity.this,
-					ScreenActivity.class);
+					SelectedActivity.class);
 			startActivity(intent);
 			finish();
 		}

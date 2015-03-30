@@ -11,6 +11,7 @@ import net.youmi.android.banner.AdSize;
 import net.youmi.android.banner.AdView;
 import net.youmi.android.banner.AdViewListener;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
@@ -23,12 +24,14 @@ import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.Display;
+import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
 import android.widget.LinearLayout;
 
 import com.android.ffmpeglib.H264Decoder;
+import com.example.remotecamera.R;
 
 public class ScreenActivity extends BaseActivity implements Callback {
 	private final static String TAG = "ScreenActivity";
@@ -51,10 +54,18 @@ public class ScreenActivity extends BaseActivity implements Callback {
 	private int mSurfaceH = 240;
 
 	private PlayThread mPlayThread;
+	
+	private String mPlayFile = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		setContentView(R.layout.screen_activity_layout);
+		Intent intent = getIntent();
+		if(intent == null || (mPlayFile = intent.getStringExtra("playfile")) == null){
+			Log.e(TAG, "intent is null or playfile is null");
+			finish();
+			return;
+		}
 		initView();
 		super.onCreate(savedInstanceState);
 	}
@@ -115,6 +126,15 @@ public class ScreenActivity extends BaseActivity implements Callback {
 	}
 
 	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		if(keyCode == KeyEvent.KEYCODE_BACK){
+			mPlayThread.interrupt();
+			mPlayThread = null;
+			return true;
+		}
+		return super.onKeyDown(keyCode, event);
+	}
+	@Override
 	public void surfaceChanged(SurfaceHolder arg0, int arg1, int arg2, int arg3) {
 		Log.e(TAG, "surfaceChanged");
 
@@ -143,7 +163,7 @@ public class ScreenActivity extends BaseActivity implements Callback {
 
 		@Override
 		public void run() {
-			File file = new File("mnt/sdcard/outputfile.h264");
+			File file = new File(mPlayFile);
 			InputStream fileIS = null;
 
 			boolean iTemp = false;
@@ -293,6 +313,7 @@ public class ScreenActivity extends BaseActivity implements Callback {
 				e.printStackTrace();
 			}
 			mH264Android.release();
+			ScreenActivity.this.finish();
 		}
 
 		int MergeBuffer(byte[] NalBuf, int NalBufUsed, byte[] SockBuf,
